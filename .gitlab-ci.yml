@@ -1,0 +1,30 @@
+image: 'rust:latest'
+
+lint:fmt:
+    before_script:
+        - rustup component add rustfmt-preview
+    script:
+        - cargo fmt
+        - test $(git ls-files --modified | wc -l) -eq 0 || (echo 'You have introduced some unformatted code:'; git ls-files --modified | sed 's/^/* /'; echo 'Please run `cargo fmt` and amend your PR.'; exit 1)
+
+lint:clippy:
+    before_script:
+        - apt update -yqq
+        - apt install -yqq --no-install-recommends libftdi1-dev
+        - rustup update stable
+        - rustup component add clippy
+    script: 
+        - cargo clippy -- --deny warnings
+        - cargo clippy --tests -- --deny warnings
+
+test:
+    stage: test
+    before_script:
+        - apt update -yqq
+        - apt install -yqq --no-install-recommends libftdi1-dev
+        - rustup update stable
+    script:
+        - rustc --version
+        - cargo --version
+        - cargo +stable test --verbose
+
