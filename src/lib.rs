@@ -13,9 +13,7 @@ impl R64Drive {
     pub fn send_cmd(&self, cmd_id: Commands, args: &[u32]) {
         let mut buf: Vec<u8> = Vec::with_capacity((args.len() + 1) * 4);
         BigEndian::write_u32(&mut buf, cmd_id as u32);
-        for (i, arg) in args.iter().cloned().enumerate() {
-            BigEndian::write_u32(&mut buf[i * 4..], arg);
-        }
+        BigEndian::write_u32_into(args, &mut buf[4..]);
         self.context.write_data(&buf).unwrap();
     }
 
