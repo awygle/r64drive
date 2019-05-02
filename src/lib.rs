@@ -1,4 +1,6 @@
 pub mod ftdi;
+pub mod test;
+
 pub enum Commands {
     VersionRequest = 0x80,
 }
