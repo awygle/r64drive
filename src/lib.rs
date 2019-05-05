@@ -7,5 +7,5 @@ pub enum Commands {
 
 pub trait R64Drive<'a, 'b> {
     type Result;
-    fn send_cmd(&'a self, cmd_id: Commands, args: &'b [u32]) -> Self::Result;
+    fn get_version(&'a self) -> Self::Result;
 }

@@ -2,10 +2,8 @@
 mod tests {
     use r64drive::*;
     #[test]
-    fn test_send_cmd() {
-        let cmd_id = Commands::VersionRequest;
-
+    fn test_get_version() {
         let r64d = r64drive::test::R64DriveTest::new();
-        r64d.send_cmd(cmd_id, &[]).unwrap();
+        r64d.get_version().unwrap();
     }
 }

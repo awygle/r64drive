@@ -4,7 +4,7 @@ pub struct R64DriveTest {}
 
 impl<'a, 'b> R64Drive<'a, 'b> for R64DriveTest {
     type Result = Result<(), ()>;
-    fn send_cmd(&'a self, _cmd_id: Commands, _args: &'b [u32]) -> Self::Result {
+    fn get_version(&'a self) -> Self::Result {
         Ok(())
     }
 }
