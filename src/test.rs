@@ -1,10 +1,12 @@
 use super::*;
-use byteorder::{BigEndian, ByteOrder};
 
 pub struct R64DriveTest {}
 
-impl R64Drive for R64DriveTest {
-    fn send_cmd(&self, cmd_id: Commands, args: &[u32]) {}
+impl<'a, 'b> R64Drive<'a, 'b> for R64DriveTest {
+    type Result = Result<(), ()>;
+    fn send_cmd(&'a self, _cmd_id: Commands, _args: &'b [u32]) -> Self::Result {
+        Ok(())
+    }
 }
 
 impl R64DriveTest {

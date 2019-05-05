@@ -6,6 +6,6 @@ mod tests {
         let cmd_id = Commands::VersionRequest;
 
         let r64d = r64drive::test::R64DriveTest::new();
-        r64d.send_cmd(cmd_id, &[]);
+        r64d.send_cmd(cmd_id, &[]).unwrap();
     }
 }
