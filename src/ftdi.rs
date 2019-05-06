@@ -7,7 +7,7 @@ pub struct R64DriveFtdi<'a> {
     _dummy: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a, 'b> R64Drive<'a, 'b> for R64DriveFtdi<'a> {
+impl<'a> R64Drive<'a> for R64DriveFtdi<'a> {
     type Result = ftdi::Result<'a, &'a [u32]>;
     fn get_version(&'a self) -> Self::Result {
         self.send_cmd(Commands::VersionRequest, &[])

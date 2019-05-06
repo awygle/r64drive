@@ -2,7 +2,7 @@ use super::*;
 
 pub struct R64DriveTest {}
 
-impl<'a, 'b> R64Drive<'a, 'b> for R64DriveTest {
+impl<'a> R64Drive<'a> for R64DriveTest {
     type Result = Result<(), ()>;
     fn get_version(&'a self) -> Self::Result {
         Ok(())

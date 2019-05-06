@@ -5,7 +5,7 @@ pub enum Commands {
     VersionRequest = 0x80,
 }
 
-pub trait R64Drive<'a, 'b> {
+pub trait R64Drive<'a> {
     type Result;
     fn get_version(&'a self) -> Self::Result;
 }
