@@ -1,13 +1,14 @@
 pub mod ftdi;
 pub mod test;
 
+#[derive(Copy, Clone, Debug)]
 pub enum Commands {
     VersionRequest = 0x80,
 }
 
 pub trait R64Driver<'a> {
     type Error;
-    fn send_cmd(&'a self, cmd_id: Commands, args: &[u32]) -> Result<&[u32], Self::Error>;
+    fn send_cmd(&'a self, cmd_id: Commands, args: &[u32]) -> Result<Vec<u32>, Self::Error>;
 }
 
 pub struct R64Drive<'a, T: R64Driver<'a>> {
