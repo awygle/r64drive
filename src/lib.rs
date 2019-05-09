@@ -6,6 +6,6 @@ pub enum Commands {
 }
 
 pub trait R64Drive<'a> {
-    type Result;
-    fn get_version(&'a self) -> Self::Result;
+    type Error;
+    fn get_version(&'a self) -> Result<&[u32], Self::Error>;
 }

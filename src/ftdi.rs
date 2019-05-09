@@ -8,8 +8,8 @@ pub struct R64DriveFtdi<'a> {
 }
 
 impl<'a> R64Drive<'a> for R64DriveFtdi<'a> {
-    type Result = ftdi::Result<'a, &'a [u32]>;
-    fn get_version(&'a self) -> Self::Result {
+    type Error = ftdi::error::Error<'a>;
+    fn get_version(&'a self) -> Result<&[u32], Self::Error> {
         self.send_cmd(Commands::VersionRequest, &[])
     }
 }

@@ -3,9 +3,9 @@ use super::*;
 pub struct R64DriveTest {}
 
 impl<'a> R64Drive<'a> for R64DriveTest {
-    type Result = Result<(), ()>;
-    fn get_version(&'a self) -> Self::Result {
-        Ok(())
+    type Error = ();
+    fn get_version(&self) -> Result<&[u32], Self::Error> {
+        Ok(&[])
     }
 }
 
