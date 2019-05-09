@@ -19,7 +19,8 @@ impl<'a, T: R64Driver<'a>> R64Drive<'a, T> {
         R64Drive { driver }
     }
 
-    pub fn get_version(&'a self) -> Result<&[u32], T::Error> {
-        Ok(&[])
+    pub fn get_version(&'a self) -> Result<(u16, u16), T::Error> {
+        let response = self.driver.send_cmd(Commands::VersionRequest, &[])?[0];
+        Ok(((response >> 16) as u16, response as u16))
     }
 }
