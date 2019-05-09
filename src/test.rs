@@ -2,9 +2,9 @@ use super::*;
 
 pub struct R64DriveTest {}
 
-impl<'a> R64Drive<'a> for R64DriveTest {
+impl<'a> R64Driver<'a> for R64DriveTest {
     type Error = ();
-    fn get_version(&self) -> Result<&[u32], Self::Error> {
+    fn send_cmd(&self, _cmd_id: Commands, _args: &[u32]) -> Result<&[u32], Self::Error> {
         Ok(&[])
     }
 }
