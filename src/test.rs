@@ -4,10 +4,13 @@ use std::cell::RefCell;
 #[derive(Copy, Clone, Debug)]
 enum State {
     Idle,
-    VersionRequest,
+    LoadFromPCOffset,
+    LoadFromPCMeta,
+    LoadFromPCData,
     SetSaveType,
     SetCICType,
     SetCIExtended,
+    VersionRequest,
     Finished,
 }
 
@@ -15,6 +18,7 @@ enum State {
 struct R64DriveTest {
     state: State,
     command: Command,
+    data_len: u32,
 }
 
 impl Default for R64DriveTest {
@@ -22,6 +26,7 @@ impl Default for R64DriveTest {
         R64DriveTest {
             state: State::Idle,
             command: Command::Unexpected,
+            data_len: 0,
         }
     }
 }
@@ -38,31 +43,52 @@ impl R64DriveTest {
                 Command::SetSaveType => {
                     self.state = State::SetSaveType;
                     self.command = Command::SetSaveType;
-                    Ok(0)
+                    Ok(4)
                 }
                 Command::SetCICType => {
                     self.state = State::SetCICType;
                     self.command = Command::SetCICType;
-                    Ok(0)
+                    Ok(4)
                 }
                 Command::SetCIExtended => {
                     self.state = State::SetCIExtended;
                     self.command = Command::SetCIExtended;
-                    Ok(0)
+                    Ok(4)
+                }
+                Command::LoadFromPC => {
+                    self.state = State::LoadFromPCOffset;
+                    self.command = Command::LoadFromPC;
+                    Ok(4)
                 }
                 _ => Err(("invalid command in state Idle", val)),
             },
             State::SetSaveType => {
                 self.state = State::Finished;
-                Ok(0)
+                Ok(4)
             }
             State::SetCICType => {
                 self.state = State::Finished;
-                Ok(0)
+                Ok(4)
             }
             State::SetCIExtended => {
                 self.state = State::Finished;
-                Ok(0)
+                Ok(4)
+            }
+            State::LoadFromPCOffset => {
+                self.state = State::LoadFromPCMeta;
+                Ok(4)
+            }
+            State::LoadFromPCMeta => {
+                self.state = State::LoadFromPCData;
+                self.data_len = val & 0x00FF_FFFFu32;
+                Ok(4)
+            }
+            State::LoadFromPCData => {
+                self.data_len -= 1;
+                if self.data_len == 0 {
+                    self.state = State::Finished;
+                }
+                Ok(4)
             }
             State::VersionRequest => Err(("invalid packet in state VersionRequest", val)),
             State::Finished => Err(("invalid packet in state Finished", val)),
@@ -79,6 +105,9 @@ impl R64DriveTest {
             State::SetSaveType => Err(("unexpected read in state SetSaveType", 0)),
             State::SetCICType => Err(("unexpected read in state SetCICType", 0)),
             State::SetCIExtended => Err(("unexpected read in state SetCIExtended", 0)),
+            State::LoadFromPCOffset => Err(("unexpected read in state LoadFromPCOffset", 0)),
+            State::LoadFromPCMeta => Err(("unexpected read in state LoadFromPCMeta", 0)),
+            State::LoadFromPCData => Err(("unexpected read in state LoadFromPCData", 0)),
             State::Finished => Ok(0x43_4D_50_00u32 | self.command as u32),
         }
     }
@@ -105,6 +134,7 @@ impl R64DriverTest {
             mock: RefCell::new(R64DriveTest {
                 state: State::Idle,
                 command: Command::Unexpected,
+                data_len: 0,
             }),
         }
     }

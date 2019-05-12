@@ -30,4 +30,14 @@ mod tests {
         let r64d = R64Drive::new(&driver);
         r64d.set_ci_extended(true).unwrap();
     }
+
+    #[test]
+    fn test_load_from_pc() {
+        let driver = test::R64DriverTest::new();
+        let r64d = R64Drive::new(&driver);
+        let offset = 0u32;
+        let index = BankIndex::CartridgeROM;
+        let data = [0u32; 4096];
+        r64d.load_from_pc(offset, index, &data).unwrap();
+    }
 }

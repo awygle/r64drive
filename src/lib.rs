@@ -8,10 +8,11 @@ extern crate num_derive;
 
 #[derive(Copy, Clone, Debug, FromPrimitive)]
 pub enum Command {
-    VersionRequest = 0x80,
+    LoadFromPC = 0x20,
     SetSaveType = 0x70,
     SetCICType = 0x72,
     SetCIExtended = 0x74,
+    VersionRequest = 0x80,
     Unexpected,
 }
 
@@ -36,6 +37,17 @@ pub enum CICType {
     CIC6105_7105 = 5,
     CIC6106_7106 = 6,
     CIC5101 = 7,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum BankIndex {
+    Invalid = 0,
+    CartridgeROM = 1,
+    SRAM256k = 2,
+    SRAM768k = 3,
+    FlashRAM = 4,
+    FlashRAMPkmn = 5,
+    EEPROM = 6,
 }
 
 #[derive(Copy, Clone, Debug, FromPrimitive, PartialEq)]
@@ -120,5 +132,18 @@ impl<'a, T: R64Driver<'a>> R64Drive<'a, T> {
     pub fn set_ci_extended(&'a self, enable: bool) -> Result<(), T::Error> {
         self.send_cmd(Command::SetCIExtended, &[enable as u32])
             .map(|_| ())
+    }
+
+    pub fn load_from_pc(
+        &'a self,
+        offset: u32,
+        bank: BankIndex,
+        data: &[u32],
+    ) -> Result<(), T::Error> {
+        let mut args: Vec<u32> = Vec::with_capacity(data.len() + 2);
+        args.push(offset);
+        args.push((bank as u32) << 24 | data.len() as u32);
+        args.extend(data);
+        self.send_cmd(Command::LoadFromPC, &args).map(|_| ())
     }
 }
