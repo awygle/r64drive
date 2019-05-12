@@ -11,6 +11,7 @@ pub enum Command {
     VersionRequest = 0x80,
     SetSaveType = 0x70,
     SetCICType = 0x72,
+    SetCIExtended = 0x74,
     Unexpected,
 }
 
@@ -113,6 +114,11 @@ impl<'a, T: R64Driver<'a>> R64Drive<'a, T> {
 
     pub fn set_cic_type(&'a self, cic_type: CICType) -> Result<(), T::Error> {
         self.send_cmd(Command::SetCICType, &[cic_type as u32])
+            .map(|_| ())
+    }
+
+    pub fn set_ci_extended(&'a self, enable: bool) -> Result<(), T::Error> {
+        self.send_cmd(Command::SetCIExtended, &[enable as u32])
             .map(|_| ())
     }
 }

@@ -23,4 +23,11 @@ mod tests {
         let r64d = R64Drive::new(&driver);
         r64d.set_cic_type(CICType::CIC6101).unwrap();
     }
+
+    #[test]
+    fn test_set_ci_extended() {
+        let driver = test::R64DriverTest::new();
+        let r64d = R64Drive::new(&driver);
+        r64d.set_ci_extended(true).unwrap();
+    }
 }

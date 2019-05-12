@@ -7,6 +7,7 @@ enum State {
     VersionRequest,
     SetSaveType,
     SetCICType,
+    SetCIExtended,
     Finished,
 }
 
@@ -44,6 +45,11 @@ impl R64DriveTest {
                     self.command = Command::SetCICType;
                     Ok(0)
                 }
+                Command::SetCIExtended => {
+                    self.state = State::SetCIExtended;
+                    self.command = Command::SetCIExtended;
+                    Ok(0)
+                }
                 _ => Err(("invalid command in state Idle", val)),
             },
             State::SetSaveType => {
@@ -51,6 +57,10 @@ impl R64DriveTest {
                 Ok(0)
             }
             State::SetCICType => {
+                self.state = State::Finished;
+                Ok(0)
+            }
+            State::SetCIExtended => {
                 self.state = State::Finished;
                 Ok(0)
             }
@@ -67,7 +77,8 @@ impl R64DriveTest {
                 Ok(0x4200_00CD)
             }
             State::SetSaveType => Err(("unexpected read in state SetSaveType", 0)),
-            State::SetCICType => Err(("unexpected read in state SetSaveType", 0)),
+            State::SetCICType => Err(("unexpected read in state SetCICType", 0)),
+            State::SetCIExtended => Err(("unexpected read in state SetCIExtended", 0)),
             State::Finished => Ok(0x43_4D_50_00u32 | self.command as u32),
         }
     }
