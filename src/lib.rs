@@ -1,9 +1,38 @@
 pub mod ftdi;
 pub mod test;
 
+use num::FromPrimitive;
+use std::fmt;
+#[macro_use]
+extern crate num_derive;
+
 #[derive(Copy, Clone, Debug)]
 pub enum Commands {
     VersionRequest = 0x80,
+}
+
+#[derive(Copy, Clone, Debug, FromPrimitive, PartialEq)]
+pub enum HardwareVariant {
+    RevA = 0x4100,
+    RevB = 0x4200,
+    Unexpected,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct FirmwareVersion(u16);
+
+impl fmt::Display for FirmwareVersion {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let major = self.0 / 100;
+        let minor = self.0 % 100;
+        write!(f, "{}.{}", major, minor)
+    }
+}
+
+impl FirmwareVersion {
+    pub fn into_inner(self) -> u16 {
+        self.0
+    }
 }
 
 pub trait R64Driver<'a> {
@@ -44,8 +73,10 @@ impl<'a, T: R64Driver<'a>> R64Drive<'a, T> {
         }
     }
 
-    pub fn get_version(&'a self) -> Result<(u16, u16), T::Error> {
+    pub fn get_version(&'a self) -> Result<(HardwareVariant, FirmwareVersion), T::Error> {
         let response = self.send_cmd(Commands::VersionRequest, &[])?[0];
-        Ok(((response >> 16) as u16, response as u16))
+        let variant =
+            HardwareVariant::from_u32(response >> 16).unwrap_or(HardwareVariant::Unexpected);
+        Ok((variant, FirmwareVersion(response as u16)))
     }
 }
