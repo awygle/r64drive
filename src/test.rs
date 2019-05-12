@@ -27,13 +27,13 @@ impl Default for R64DriveTest {
 impl R64DriveTest {
     fn recv_u32(&mut self, val: u32) -> Result<usize, (&'static str, u32)> {
         match self.state {
-            State::Idle => match val >> 24 {
-                0x80 => {
+            State::Idle => match Command::from_u32(val >> 24).unwrap_or(Command::Unexpected) {
+                Command::VersionRequest => {
                     self.state = State::VersionRequest;
                     self.command = Command::VersionRequest;
                     Ok(4)
                 }
-                0x70 => {
+                Command::SetSaveType => {
                     self.state = State::SetSaveType;
                     self.command = Command::SetSaveType;
                     Ok(0)
