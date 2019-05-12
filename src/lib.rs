@@ -6,9 +6,22 @@ use std::fmt;
 #[macro_use]
 extern crate num_derive;
 
-#[derive(Copy, Clone, Debug)]
-pub enum Commands {
+#[derive(Copy, Clone, Debug, FromPrimitive)]
+pub enum Command {
     VersionRequest = 0x80,
+    SetSaveType = 0x70,
+    Unexpected,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum SaveType {
+    None = 0,
+    EEPROM4k = 1,
+    EEPROM16k = 2,
+    SRAM256k = 3,
+    FlashRAM1M = 4,
+    SRAM768k = 5,
+    FlashRAM1MPkmn = 6,
 }
 
 #[derive(Copy, Clone, Debug, FromPrimitive, PartialEq)]
@@ -50,7 +63,7 @@ impl<'a, T: R64Driver<'a>> R64Drive<'a, T> {
         R64Drive { driver }
     }
 
-    fn send_cmd(&'a self, cmd_id: Commands, args: &[u32]) -> Result<Vec<u32>, T::Error> {
+    fn send_cmd(&'a self, cmd_id: Command, args: &[u32]) -> Result<Vec<u32>, T::Error> {
         let cmd_hdr = ((cmd_id as u32) << 24) | 0x43_4D_44u32;
         self.driver.send_u32(cmd_hdr)?;
 
@@ -74,9 +87,14 @@ impl<'a, T: R64Driver<'a>> R64Drive<'a, T> {
     }
 
     pub fn get_version(&'a self) -> Result<(HardwareVariant, FirmwareVersion), T::Error> {
-        let response = self.send_cmd(Commands::VersionRequest, &[])?[0];
+        let response = self.send_cmd(Command::VersionRequest, &[])?[0];
         let variant =
             HardwareVariant::from_u32(response >> 16).unwrap_or(HardwareVariant::Unexpected);
         Ok((variant, FirmwareVersion(response as u16)))
+    }
+
+    pub fn set_save_type(&'a self, save_type: SaveType) -> Result<(), T::Error> {
+        self.send_cmd(Command::SetSaveType, &[save_type as u32])
+            .map(|_| ())
     }
 }

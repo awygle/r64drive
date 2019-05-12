@@ -9,4 +9,11 @@ mod tests {
         assert!(variant != HardwareVariant::Unexpected);
         assert!(version.into_inner() == 205);
     }
+
+    #[test]
+    fn test_set_save_type() {
+        let driver = test::R64DriverTest::new();
+        let r64d = R64Drive::new(&driver);
+        r64d.set_save_type(SaveType::None).unwrap();
+    }
 }

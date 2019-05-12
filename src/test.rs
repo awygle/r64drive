@@ -2,21 +2,24 @@ use super::*;
 use std::cell::RefCell;
 
 #[derive(Copy, Clone, Debug)]
-enum States {
+enum State {
     Idle,
     VersionRequest,
+    SetSaveType,
     Finished,
 }
 
 #[derive(Copy, Clone, Debug)]
 struct R64DriveTest {
-    state: States,
+    state: State,
+    command: Command,
 }
 
 impl Default for R64DriveTest {
     fn default() -> Self {
         R64DriveTest {
-            state: States::Idle,
+            state: State::Idle,
+            command: Command::Unexpected,
         }
     }
 }
@@ -24,26 +27,37 @@ impl Default for R64DriveTest {
 impl R64DriveTest {
     fn recv_u32(&mut self, val: u32) -> Result<usize, (&'static str, u32)> {
         match self.state {
-            States::Idle => match val >> 24 {
+            State::Idle => match val >> 24 {
                 0x80 => {
-                    self.state = States::VersionRequest;
+                    self.state = State::VersionRequest;
+                    self.command = Command::VersionRequest;
                     Ok(4)
+                }
+                0x70 => {
+                    self.state = State::SetSaveType;
+                    self.command = Command::SetSaveType;
+                    Ok(0)
                 }
                 _ => Err(("invalid command in state Idle", val)),
             },
-            States::VersionRequest => Err(("invalid packet in state VersionRequest", val)),
-            States::Finished => Err(("invalid packet in state Finished", val)),
+            State::SetSaveType => {
+                self.state = State::Finished;
+                Ok(0)
+            }
+            State::VersionRequest => Err(("invalid packet in state VersionRequest", val)),
+            State::Finished => Err(("invalid packet in state Finished", val)),
         }
     }
 
     fn send_u32(&mut self) -> Result<u32, (&'static str, u32)> {
         match self.state {
-            States::Idle => Err(("unexpected read in state Idle", 0)),
-            States::VersionRequest => {
-                self.state = States::Finished;
+            State::Idle => Err(("unexpected read in state Idle", 0)),
+            State::VersionRequest => {
+                self.state = State::Finished;
                 Ok(0x4200_00CD)
             }
-            States::Finished => Ok(0x43_4D_50_80u32),
+            State::SetSaveType => Err(("unexpected read in state SetSaveType", 0)),
+            State::Finished => Ok(0x43_4D_50_00u32 | self.command as u32),
         }
     }
 }
@@ -67,7 +81,8 @@ impl R64DriverTest {
     pub fn new() -> R64DriverTest {
         R64DriverTest {
             mock: RefCell::new(R64DriveTest {
-                state: States::Idle,
+                state: State::Idle,
+                command: Command::Unexpected,
             }),
         }
     }
