@@ -6,6 +6,7 @@ enum State {
     Idle,
     VersionRequest,
     SetSaveType,
+    SetCICType,
     Finished,
 }
 
@@ -38,9 +39,18 @@ impl R64DriveTest {
                     self.command = Command::SetSaveType;
                     Ok(0)
                 }
+                Command::SetCICType => {
+                    self.state = State::SetCICType;
+                    self.command = Command::SetCICType;
+                    Ok(0)
+                }
                 _ => Err(("invalid command in state Idle", val)),
             },
             State::SetSaveType => {
+                self.state = State::Finished;
+                Ok(0)
+            }
+            State::SetCICType => {
                 self.state = State::Finished;
                 Ok(0)
             }
@@ -57,6 +67,7 @@ impl R64DriveTest {
                 Ok(0x4200_00CD)
             }
             State::SetSaveType => Err(("unexpected read in state SetSaveType", 0)),
+            State::SetCICType => Err(("unexpected read in state SetSaveType", 0)),
             State::Finished => Ok(0x43_4D_50_00u32 | self.command as u32),
         }
     }

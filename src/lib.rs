@@ -10,6 +10,7 @@ extern crate num_derive;
 pub enum Command {
     VersionRequest = 0x80,
     SetSaveType = 0x70,
+    SetCICType = 0x72,
     Unexpected,
 }
 
@@ -22,6 +23,18 @@ pub enum SaveType {
     FlashRAM1M = 4,
     SRAM768k = 5,
     FlashRAM1MPkmn = 6,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum CICType {
+    CIC6101 = 0,
+    CIC6102 = 1,
+    CIC7101 = 2,
+    CIC7102 = 3,
+    CIC6103_7103 = 4,
+    CIC6105_7105 = 5,
+    CIC6106_7106 = 6,
+    CIC5101 = 7,
 }
 
 #[derive(Copy, Clone, Debug, FromPrimitive, PartialEq)]
@@ -95,6 +108,11 @@ impl<'a, T: R64Driver<'a>> R64Drive<'a, T> {
 
     pub fn set_save_type(&'a self, save_type: SaveType) -> Result<(), T::Error> {
         self.send_cmd(Command::SetSaveType, &[save_type as u32])
+            .map(|_| ())
+    }
+
+    pub fn set_cic_type(&'a self, cic_type: CICType) -> Result<(), T::Error> {
+        self.send_cmd(Command::SetCICType, &[cic_type as u32])
             .map(|_| ())
     }
 }
