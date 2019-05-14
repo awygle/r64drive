@@ -16,6 +16,7 @@ use R64DriveError::*;
 #[derive(Copy, Clone, Debug, FromPrimitive)]
 pub enum Command {
     LoadFromPC = 0x20,
+    DumpToPC = 0x30,
     SetSaveType = 0x70,
     SetCICType = 0x72,
     SetCIExtended = 0x74,
@@ -161,8 +162,21 @@ where
     ) -> Result<(), R64DriveError<T::Error>> {
         let mut args: Vec<u32> = Vec::with_capacity(data.len() + 2);
         args.push(offset);
-        args.push((bank as u32) << 24 | data.len() as u32);
+        args.push((bank as u32) << 24 | (data.len() * 4) as u32);
         args.extend(data);
         self.send_cmd(Command::LoadFromPC, &args, 0).map(|_| ())
+    }
+
+    pub fn dump_to_pc(
+        &'a self,
+        offset: u32,
+        bank: BankIndex,
+        len: u32,
+    ) -> Result<Vec<u32>, R64DriveError<T::Error>> {
+        self.send_cmd(
+            Command::DumpToPC,
+            &[offset, (bank as u32) << 24 | len],
+            (len / 4) as usize,
+        )
     }
 }

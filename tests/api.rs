@@ -40,4 +40,15 @@ mod tests {
         let data = [0u32; 4096];
         r64d.load_from_pc(offset, index, &data).unwrap();
     }
+
+    #[test]
+    fn test_dump_to_pc() {
+        let driver = test::R64DriverTest::new();
+        let r64d = R64Drive::new(&driver);
+        let offset = 0u32;
+        let index = BankIndex::CartridgeROM;
+        let len = 4096;
+        let data = r64d.dump_to_pc(offset, index, len).unwrap();
+        assert!(data.len() == (len / 4) as usize);
+    }
 }

@@ -7,6 +7,9 @@ enum State {
     LoadFromPCOffset,
     LoadFromPCMeta,
     LoadFromPCData,
+    DumpToPCOffset,
+    DumpToPCMeta,
+    DumpToPCData,
     SetSaveType,
     SetCICType,
     SetCIExtended,
@@ -66,7 +69,12 @@ impl R64DriveTest {
                     self.command = Command::LoadFromPC;
                     Ok(4)
                 }
-                _ => Err(("invalid command in state Idle", val)),
+                Command::DumpToPC => {
+                    self.state = State::DumpToPCOffset;
+                    self.command = Command::DumpToPC;
+                    Ok(4)
+                }
+                Command::Unexpected => Err(("unexpected command in state Idle", val)),
             },
             State::SetSaveType => {
                 self.state = State::Finished;
@@ -86,7 +94,7 @@ impl R64DriveTest {
             }
             State::LoadFromPCMeta => {
                 self.state = State::LoadFromPCData;
-                self.data_len = val & 0x00FF_FFFFu32;
+                self.data_len = (val & 0x00FF_FFFFu32) / 4;
                 Ok(4)
             }
             State::LoadFromPCData => {
@@ -96,6 +104,16 @@ impl R64DriveTest {
                 }
                 Ok(4)
             }
+            State::DumpToPCOffset => {
+                self.state = State::DumpToPCMeta;
+                Ok(4)
+            }
+            State::DumpToPCMeta => {
+                self.state = State::DumpToPCData;
+                self.data_len = (val & 0x00FF_FFFFu32) / 4;
+                Ok(4)
+            }
+            State::DumpToPCData => Err(("invalid packet in state DumpToPCData", val)),
             State::VersionRequest => Err(("invalid packet in state VersionRequest", val)),
             State::Finished => Err(("invalid packet in state Finished", val)),
         }
@@ -114,6 +132,15 @@ impl R64DriveTest {
             State::LoadFromPCOffset => Err(("unexpected read in state LoadFromPCOffset", 0)),
             State::LoadFromPCMeta => Err(("unexpected read in state LoadFromPCMeta", 0)),
             State::LoadFromPCData => Err(("unexpected read in state LoadFromPCData", 0)),
+            State::DumpToPCOffset => Err(("unexpected read in state DumpToPCOffset", 0)),
+            State::DumpToPCMeta => Err(("unexpected read in state DumpToPCMeta", 0)),
+            State::DumpToPCData => {
+                self.data_len -= 1;
+                if self.data_len == 0 {
+                    self.state = State::Finished;
+                }
+                Ok(0)
+            }
             State::Finished => Ok(0x43_4D_50_00u32 | self.command as u32),
         }
     }
