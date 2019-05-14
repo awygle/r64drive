@@ -6,6 +6,13 @@ use std::fmt;
 #[macro_use]
 extern crate num_derive;
 
+#[derive(Copy, Clone, Debug)]
+pub enum R64DriveError<T> {
+    InvalidCompletion(u32),
+    NativeError(T),
+}
+use R64DriveError::*;
+
 #[derive(Copy, Clone, Debug, FromPrimitive)]
 pub enum Command {
     LoadFromPC = 0x20,
@@ -84,12 +91,20 @@ pub struct R64Drive<'a, T: R64Driver<'a>> {
     driver: &'a T,
 }
 
-impl<'a, T: R64Driver<'a>> R64Drive<'a, T> {
+impl<'a, T: R64Driver<'a>> R64Drive<'a, T>
+where
+    R64DriveError<<T as R64Driver<'a>>::Error>: From<<T as R64Driver<'a>>::Error>,
+{
     pub fn new(driver: &'a T) -> R64Drive<T> {
         R64Drive { driver }
     }
 
-    fn send_cmd(&'a self, cmd_id: Command, args: &[u32]) -> Result<Vec<u32>, T::Error> {
+    fn send_cmd(
+        &'a self,
+        cmd_id: Command,
+        args: &[u32],
+        expected_len: usize,
+    ) -> Result<Vec<u32>, R64DriveError<T::Error>> {
         let cmd_hdr = ((cmd_id as u32) << 24) | 0x43_4D_44u32;
         self.driver.send_u32(cmd_hdr)?;
 
@@ -100,37 +115,41 @@ impl<'a, T: R64Driver<'a>> R64Drive<'a, T> {
         let mut response = Vec::new();
         let completion_pkt = (cmd_id as u32) | 0x43_4D_50_00u32;
 
-        loop {
+        for _ in 0..expected_len {
             let resp_u32 = self.driver.recv_u32()?;
 
             response.push(resp_u32);
-
-            // TODO handle commands which don't return this value
-            if resp_u32 == completion_pkt {
-                return Ok(response);
-            }
         }
+
+        let resp_u32 = self.driver.recv_u32()?;
+        if resp_u32 != completion_pkt {
+            return Err(InvalidCompletion(resp_u32));
+        }
+
+        Ok(response)
     }
 
-    pub fn get_version(&'a self) -> Result<(HardwareVariant, FirmwareVersion), T::Error> {
-        let response = self.send_cmd(Command::VersionRequest, &[])?[0];
+    pub fn get_version(
+        &'a self,
+    ) -> Result<(HardwareVariant, FirmwareVersion), R64DriveError<T::Error>> {
+        let response = self.send_cmd(Command::VersionRequest, &[], 1)?[0];
         let variant =
             HardwareVariant::from_u32(response >> 16).unwrap_or(HardwareVariant::Unexpected);
         Ok((variant, FirmwareVersion(response as u16)))
     }
 
-    pub fn set_save_type(&'a self, save_type: SaveType) -> Result<(), T::Error> {
-        self.send_cmd(Command::SetSaveType, &[save_type as u32])
+    pub fn set_save_type(&'a self, save_type: SaveType) -> Result<(), R64DriveError<T::Error>> {
+        self.send_cmd(Command::SetSaveType, &[save_type as u32], 0)
             .map(|_| ())
     }
 
-    pub fn set_cic_type(&'a self, cic_type: CICType) -> Result<(), T::Error> {
-        self.send_cmd(Command::SetCICType, &[cic_type as u32])
+    pub fn set_cic_type(&'a self, cic_type: CICType) -> Result<(), R64DriveError<T::Error>> {
+        self.send_cmd(Command::SetCICType, &[cic_type as u32], 0)
             .map(|_| ())
     }
 
-    pub fn set_ci_extended(&'a self, enable: bool) -> Result<(), T::Error> {
-        self.send_cmd(Command::SetCIExtended, &[enable as u32])
+    pub fn set_ci_extended(&'a self, enable: bool) -> Result<(), R64DriveError<T::Error>> {
+        self.send_cmd(Command::SetCIExtended, &[enable as u32], 0)
             .map(|_| ())
     }
 
@@ -139,11 +158,11 @@ impl<'a, T: R64Driver<'a>> R64Drive<'a, T> {
         offset: u32,
         bank: BankIndex,
         data: &[u32],
-    ) -> Result<(), T::Error> {
+    ) -> Result<(), R64DriveError<T::Error>> {
         let mut args: Vec<u32> = Vec::with_capacity(data.len() + 2);
         args.push(offset);
         args.push((bank as u32) << 24 | data.len() as u32);
         args.extend(data);
-        self.send_cmd(Command::LoadFromPC, &args).map(|_| ())
+        self.send_cmd(Command::LoadFromPC, &args, 0).map(|_| ())
     }
 }

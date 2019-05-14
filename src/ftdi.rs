@@ -39,3 +39,9 @@ impl<'a> Default for R64DriveFtdi<'a> {
         Self::new()
     }
 }
+
+impl<'a> From<ftdi::error::Error<'a>> for R64DriveError<ftdi::error::Error<'a>> {
+    fn from(err: ftdi::error::Error<'a>) -> Self {
+        R64DriveError::NativeError(err)
+    }
+}

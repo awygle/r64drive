@@ -31,6 +31,12 @@ impl Default for R64DriveTest {
     }
 }
 
+impl From<(&'static str, u32)> for R64DriveError<(&'static str, u32)> {
+    fn from(err: (&'static str, u32)) -> Self {
+        R64DriveError::NativeError(err)
+    }
+}
+
 impl R64DriveTest {
     fn recv_u32(&mut self, val: u32) -> Result<usize, (&'static str, u32)> {
         match self.state {
