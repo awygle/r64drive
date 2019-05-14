@@ -1,6 +1,7 @@
 use super::*;
 use byteorder::{BigEndian, ByteOrder};
 use safe_ftdi as ftdi;
+use ftdi::mpsse::MpsseMode;
 
 pub struct R64DriveFtdi<'a> {
     context: ftdi::Context,
@@ -30,6 +31,12 @@ impl<'a> R64DriveFtdi<'a> {
             _dummy: std::marker::PhantomData,
         };
         result.context.open(0x0403, 0x6014).unwrap();
+
+        // Initialize/reset hardware (HW2 only?)
+        result.context.set_bitmode(0xFF, MpsseMode::BITMODE_RESET).unwrap();
+        result.context.set_bitmode(0xFF, MpsseMode::BITMODE_SYNCFF).unwrap();
+        result.recv_u32().unwrap();
+
         result
     }
 }

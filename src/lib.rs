@@ -9,6 +9,7 @@ extern crate num_derive;
 #[derive(Copy, Clone, Debug)]
 pub enum R64DriveError<T> {
     InvalidCompletion(u32),
+    InvalidMagic(u32),
     NativeError(T),
 }
 use R64DriveError::*;
@@ -133,10 +134,14 @@ where
     pub fn get_version(
         &'a self,
     ) -> Result<(HardwareVariant, FirmwareVersion), R64DriveError<T::Error>> {
-        let response = self.send_cmd(Command::VersionRequest, &[], 1)?[0];
+        let response = self.send_cmd(Command::VersionRequest, &[], 2)?;
+        if response[1] != 0x55_44_45_56u32 { // "UDEV"
+            Err(InvalidMagic(response[1]))?;
+        }
+
         let variant =
-            HardwareVariant::from_u32(response >> 16).unwrap_or(HardwareVariant::Unexpected);
-        Ok((variant, FirmwareVersion(response as u16)))
+            HardwareVariant::from_u32(response[0] >> 16).unwrap_or(HardwareVariant::Unexpected);
+        Ok((variant, FirmwareVersion(response[0] as u16)))
     }
 
     pub fn set_save_type(&'a self, save_type: SaveType) -> Result<(), R64DriveError<T::Error>> {

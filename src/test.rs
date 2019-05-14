@@ -14,6 +14,7 @@ enum State {
     SetCICType,
     SetCIExtended,
     VersionRequest,
+    SendMagic,
     Finished,
 }
 
@@ -115,6 +116,7 @@ impl R64DriveTest {
             }
             State::DumpToPCData => Err(("invalid packet in state DumpToPCData", val)),
             State::VersionRequest => Err(("invalid packet in state VersionRequest", val)),
+            State::SendMagic => Err(("invalid packet in state SendMagic", val)),
             State::Finished => Err(("invalid packet in state Finished", val)),
         }
     }
@@ -123,8 +125,12 @@ impl R64DriveTest {
         match self.state {
             State::Idle => Err(("unexpected read in state Idle", 0)),
             State::VersionRequest => {
-                self.state = State::Finished;
+                self.state = State::SendMagic;
                 Ok(0x4200_00CD)
+            }
+            State::SendMagic => {
+                self.state = State::Finished;
+                Ok(0x5544_4556)
             }
             State::SetSaveType => Err(("unexpected read in state SetSaveType", 0)),
             State::SetCICType => Err(("unexpected read in state SetCICType", 0)),
