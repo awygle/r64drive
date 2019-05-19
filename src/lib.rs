@@ -83,26 +83,26 @@ impl FirmwareVersion {
     }
 }
 
-pub trait R64Driver<'a> {
+pub trait R64Driver {
     type Error;
-    fn send_u32(&'a self, val: u32) -> Result<usize, Self::Error>;
-    fn recv_u32(&'a self) -> Result<u32, Self::Error>;
+    fn send_u32(&self, val: u32) -> Result<usize, Self::Error>;
+    fn recv_u32(&self) -> Result<u32, Self::Error>;
 }
 
-pub struct R64Drive<'a, T: R64Driver<'a>> {
+pub struct R64Drive<'a, T: R64Driver> {
     driver: &'a T,
 }
 
-impl<'a, T: R64Driver<'a>> R64Drive<'a, T>
+impl<'a, T: R64Driver> R64Drive<'a, T>
 where
-    R64DriveError<<T as R64Driver<'a>>::Error>: From<<T as R64Driver<'a>>::Error>,
+    R64DriveError<<T as R64Driver>::Error>: From<<T as R64Driver>::Error>,
 {
-    pub fn new(driver: &'a T) -> R64Drive<T> {
+    pub fn new(driver: &T) -> R64Drive<T> {
         R64Drive { driver }
     }
 
     fn send_cmd(
-        &'a self,
+        &self,
         cmd_id: Command,
         args: &[u32],
         expected_len: usize,
@@ -132,7 +132,7 @@ where
     }
 
     pub fn get_version(
-        &'a self,
+        &self,
     ) -> Result<(HardwareVariant, FirmwareVersion), R64DriveError<T::Error>> {
         let response = self.send_cmd(Command::VersionRequest, &[], 2)?;
         if response[1] != 0x55_44_45_56u32 { // "UDEV"
@@ -144,23 +144,23 @@ where
         Ok((variant, FirmwareVersion(response[0] as u16)))
     }
 
-    pub fn set_save_type(&'a self, save_type: SaveType) -> Result<(), R64DriveError<T::Error>> {
+    pub fn set_save_type(&self, save_type: SaveType) -> Result<(), R64DriveError<T::Error>> {
         self.send_cmd(Command::SetSaveType, &[save_type as u32], 0)
             .map(|_| ())
     }
 
-    pub fn set_cic_type(&'a self, cic_type: CICType) -> Result<(), R64DriveError<T::Error>> {
+    pub fn set_cic_type(&self, cic_type: CICType) -> Result<(), R64DriveError<T::Error>> {
         self.send_cmd(Command::SetCICType, &[cic_type as u32], 0)
             .map(|_| ())
     }
 
-    pub fn set_ci_extended(&'a self, enable: bool) -> Result<(), R64DriveError<T::Error>> {
+    pub fn set_ci_extended(&self, enable: bool) -> Result<(), R64DriveError<T::Error>> {
         self.send_cmd(Command::SetCIExtended, &[enable as u32], 0)
             .map(|_| ())
     }
 
     pub fn load_from_pc(
-        &'a self,
+        &self,
         offset: u32,
         bank: BankIndex,
         data: &[u32],
@@ -173,7 +173,7 @@ where
     }
 
     pub fn dump_to_pc(
-        &'a self,
+        &self,
         offset: u32,
         bank: BankIndex,
         len: u32,

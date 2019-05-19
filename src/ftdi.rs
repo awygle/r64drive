@@ -3,32 +3,30 @@ use byteorder::{BigEndian, ByteOrder};
 use safe_ftdi as ftdi;
 use ftdi::mpsse::MpsseMode;
 
-pub struct R64DriveFtdi<'a> {
+pub struct R64DriveFtdi {
     context: ftdi::Context,
-    _dummy: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a> R64Driver<'a> for R64DriveFtdi<'a> {
-    type Error = ftdi::error::Error<'a>;
-    fn send_u32(&'a self, val: u32) -> Result<usize, Self::Error> {
+impl R64Driver for R64DriveFtdi {
+    type Error = ftdi::error::Error;
+    fn send_u32(&self, val: u32) -> Result<usize, Self::Error> {
         let mut buf = [0; 4];
         BigEndian::write_u32(&mut buf, val);
         self.context.write_data(&buf).map(|x| x as usize)
     }
 
-    fn recv_u32(&'a self) -> Result<u32, Self::Error> {
+    fn recv_u32(&self) -> Result<u32, Self::Error> {
         let mut resp = [0u8; 4];
         self.context.read_data(&mut resp)?;
         Ok(BigEndian::read_u32(&resp))
     }
 }
 
-impl<'a> R64DriveFtdi<'a> {
-    pub fn new() -> R64DriveFtdi<'a> {
+impl R64DriveFtdi {
+    pub fn new() -> R64DriveFtdi {
         // TODO take a hardware version or VID/PID
         let mut result = R64DriveFtdi {
             context: ftdi::Context::new().unwrap(),
-            _dummy: std::marker::PhantomData,
         };
         result.context.open(0x0403, 0x6014).unwrap();
 
@@ -41,14 +39,14 @@ impl<'a> R64DriveFtdi<'a> {
     }
 }
 
-impl<'a> Default for R64DriveFtdi<'a> {
+impl Default for R64DriveFtdi {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a> From<ftdi::error::Error<'a>> for R64DriveError<ftdi::error::Error<'a>> {
-    fn from(err: ftdi::error::Error<'a>) -> Self {
+impl From<ftdi::error::Error> for R64DriveError<ftdi::error::Error> {
+    fn from(err: ftdi::error::Error) -> Self {
         R64DriveError::NativeError(err)
     }
 }

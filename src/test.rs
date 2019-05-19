@@ -156,13 +156,13 @@ pub struct R64DriverTest {
     mock: RefCell<R64DriveTest>,
 }
 
-impl<'a> R64Driver<'a> for R64DriverTest {
+impl R64Driver for R64DriverTest {
     type Error = (&'static str, u32);
-    fn send_u32(&'a self, val: u32) -> Result<usize, Self::Error> {
+    fn send_u32(&self, val: u32) -> Result<usize, Self::Error> {
         self.mock.borrow_mut().recv_u32(val)
     }
 
-    fn recv_u32(&'a self) -> Result<u32, Self::Error> {
+    fn recv_u32(&self) -> Result<u32, Self::Error> {
         self.mock.borrow_mut().send_u32()
     }
 }
