@@ -127,19 +127,11 @@ where
         let cmd_hdr = ((cmd_id as u32) << 24) | consts::COMMAND;
         self.driver.send_u32(cmd_hdr)?;
 
-        for arg in args {
-            self.driver.send_u32(*arg)?;
-        }
+        self.driver.send_u32_slice(args)?;
 
-        let mut response = Vec::new();
+        let response = self.driver.recv_u32_slice(expected_len)?;
+
         let completion_pkt = (cmd_id as u32) | consts::COMPARE;
-
-        for _ in 0..expected_len {
-            let resp_u32 = self.driver.recv_u32()?;
-
-            response.push(resp_u32);
-        }
-
         let resp_u32 = self.driver.recv_u32()?;
         if resp_u32 != completion_pkt {
             return Err(InvalidCompletion(resp_u32));
