@@ -135,7 +135,8 @@ where
         &self,
     ) -> Result<(HardwareVariant, FirmwareVersion), R64DriveError<T::Error>> {
         let response = self.send_cmd(Command::VersionRequest, &[], 2)?;
-        if response[1] != 0x55_44_45_56u32 { // "UDEV"
+        if response[1] != 0x55_44_45_56u32 {
+            // "UDEV"
             Err(InvalidMagic(response[1]))?;
         }
 
