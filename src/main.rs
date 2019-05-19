@@ -12,12 +12,16 @@ enum Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match self {
-            Error::Driver => "Generic driver error",
-            Error::Io => "Unable to read file",
-            Error::NotN64 => "Provided file is not an N64 ROM",
-            Error::RomSize => "Provided file is too small for N64",
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Error::Driver => "Generic driver error",
+                Error::Io => "Unable to read file",
+                Error::NotN64 => "Provided file is not an N64 ROM",
+                Error::RomSize => "Provided file is too small for N64",
+            }
+        )
     }
 }
 

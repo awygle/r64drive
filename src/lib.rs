@@ -162,8 +162,13 @@ where
     }
 
     pub fn set_cic_type(&self, cic_type: CICType) -> Result<(), R64DriveError<T::Error>> {
-        self.send_cmd(Command::SetCICType, &[cic_type as u32 | consts::OVERRIDE_CIC], 0, true)
-            .map(|_| ())
+        self.send_cmd(
+            Command::SetCICType,
+            &[cic_type as u32 | consts::OVERRIDE_CIC],
+            0,
+            true,
+        )
+        .map(|_| ())
     }
 
     pub fn set_ci_extended(&self, enable: bool) -> Result<(), R64DriveError<T::Error>> {
@@ -184,7 +189,8 @@ where
         args.push(offset);
         args.push((bank as u32) << 24 | (data.len() * 4) as u32);
         args.extend(data);
-        self.send_cmd(Command::LoadFromPC, &args, 0, false).map(|_| ())
+        self.send_cmd(Command::LoadFromPC, &args, 0, false)
+            .map(|_| ())
     }
 
     pub fn dump_to_pc(

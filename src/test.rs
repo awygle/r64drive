@@ -152,7 +152,7 @@ impl R64DriveTest {
             State::SendValidation => {
                 self.state = State::Finished;
                 Ok(0x43_4D_50_00u32 | self.command as u32)
-            },
+            }
             State::Finished => Err(("unexpected read in state Finished", 0)),
         }
     }
