@@ -1,5 +1,5 @@
 use super::*;
-use byteorder::{BigEndian, ByteOrder};
+use byteorder::{BigEndian, ByteOrder, ReadBytesExt, WriteBytesExt};
 use ftdi::mpsse::MpsseMode;
 use safe_ftdi as ftdi;
 
@@ -19,6 +19,28 @@ impl R64Driver for R64DriveFtdi {
         let mut resp = [0u8; 4];
         self.context.read_data(&mut resp)?;
         Ok(BigEndian::read_u32(&resp))
+    }
+
+    fn send_u32_slice(&self, slice: &[u32]) -> Result<usize, Self::Error> {
+        let mut buf = Vec::with_capacity(4 * slice.len());
+        let buf_wtr = &mut buf;
+        for &val in slice {
+            buf_wtr
+                .write_u32::<BigEndian>(val)
+                .expect("Error writing to vector");
+        }
+        self.context.write_data(&buf).map(|x| x as usize)
+    }
+
+    fn recv_u32_slice(&self, len: usize) -> Result<Vec<u32>, Self::Error> {
+        let mut buf = Vec::with_capacity(4 * len);
+        self.context.read_data(&mut buf)?;
+        let mut buf_rdr: &[u8] = &mut buf;
+        let mut result = Vec::with_capacity(len);
+        while let Ok(val) = buf_rdr.read_u32::<BigEndian>() {
+            result.push(val);
+        }
+        Ok(result)
     }
 }
 
