@@ -1,3 +1,4 @@
+pub mod consts;
 pub mod ftdi;
 pub mod test;
 
@@ -107,7 +108,7 @@ where
         args: &[u32],
         expected_len: usize,
     ) -> Result<Vec<u32>, R64DriveError<T::Error>> {
-        let cmd_hdr = ((cmd_id as u32) << 24) | 0x43_4D_44u32;
+        let cmd_hdr = ((cmd_id as u32) << 24) | consts::COMMAND;
         self.driver.send_u32(cmd_hdr)?;
 
         for arg in args {
@@ -115,7 +116,7 @@ where
         }
 
         let mut response = Vec::new();
-        let completion_pkt = (cmd_id as u32) | 0x43_4D_50_00u32;
+        let completion_pkt = (cmd_id as u32) | consts::COMPARE;
 
         for _ in 0..expected_len {
             let resp_u32 = self.driver.recv_u32()?;
@@ -135,8 +136,7 @@ where
         &self,
     ) -> Result<(HardwareVariant, FirmwareVersion), R64DriveError<T::Error>> {
         let response = self.send_cmd(Command::VersionRequest, &[], 2)?;
-        if response[1] != 0x55_44_45_56u32 {
-            // "UDEV"
+        if response[1] != consts::MAGIC {
             Err(InvalidMagic(response[1]))?;
         }
 
