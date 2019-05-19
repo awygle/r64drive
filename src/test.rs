@@ -15,6 +15,7 @@ enum State {
     SetCIExtended,
     VersionRequest,
     SendMagic,
+    SendValidation,
     Finished,
 }
 
@@ -78,15 +79,15 @@ impl R64DriveTest {
                 Command::Unexpected => Err(("unexpected command in state Idle", val)),
             },
             State::SetSaveType => {
-                self.state = State::Finished;
+                self.state = State::SendValidation;
                 Ok(4)
             }
             State::SetCICType => {
-                self.state = State::Finished;
+                self.state = State::SendValidation;
                 Ok(4)
             }
             State::SetCIExtended => {
-                self.state = State::Finished;
+                self.state = State::SendValidation;
                 Ok(4)
             }
             State::LoadFromPCOffset => {
@@ -117,6 +118,7 @@ impl R64DriveTest {
             State::DumpToPCData => Err(("invalid packet in state DumpToPCData", val)),
             State::VersionRequest => Err(("invalid packet in state VersionRequest", val)),
             State::SendMagic => Err(("invalid packet in state SendMagic", val)),
+            State::SendValidation => Err(("invalid packet in state SendValidation", val)),
             State::Finished => Err(("invalid packet in state Finished", val)),
         }
     }
@@ -129,7 +131,7 @@ impl R64DriveTest {
                 Ok(0x4200_00CD)
             }
             State::SendMagic => {
-                self.state = State::Finished;
+                self.state = State::SendValidation;
                 Ok(0x5544_4556)
             }
             State::SetSaveType => Err(("unexpected read in state SetSaveType", 0)),
@@ -147,7 +149,11 @@ impl R64DriveTest {
                 }
                 Ok(0)
             }
-            State::Finished => Ok(0x43_4D_50_00u32 | self.command as u32),
+            State::SendValidation => {
+                self.state = State::Finished;
+                Ok(0x43_4D_50_00u32 | self.command as u32)
+            },
+            State::Finished => Err(("unexpected read in state Finished", 0)),
         }
     }
 }
