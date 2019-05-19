@@ -66,10 +66,11 @@ fn main() -> Result<(), Error> {
         // Read ROM file into Vec<u32>
         let size = f.len() / mem::size_of::<u32>();
         let mut rom = vec![0; size];
-
-        println!("Uploading {} bytes...", f.len());
         BigEndian::read_u32_into(&f, &mut rom);
+
+        println!("Uploading {} bytes...", rom.len() * 4);
         r64d.load_from_pc(0, BankIndex::CartridgeROM, &rom)?;
+
         println!("Done!");
     }
 
