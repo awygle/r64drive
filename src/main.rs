@@ -65,8 +65,7 @@ fn main() -> Result<(), Error> {
 
         // Read ROM file into Vec<u32>
         let size = f.len() / mem::size_of::<u32>();
-        let mut rom = Vec::with_capacity(size);
-        rom.resize(size, 0);
+        let mut rom = vec![0; size];
 
         println!("Uploading {} bytes...", f.len());
         BigEndian::read_u32_into(&f, &mut rom);

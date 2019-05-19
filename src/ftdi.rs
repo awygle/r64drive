@@ -22,18 +22,15 @@ impl R64Driver for R64DriveFtdi {
     }
 
     fn send_u32_slice(&self, slice: &[u32]) -> Result<usize, Self::Error> {
-        let mut buf = Vec::with_capacity(4 * slice.len());
-        buf.resize(4 * slice.len(), 0);
+        let mut buf = vec![0; 4 * slice.len()];
         BigEndian::write_u32_into(slice, &mut buf);
         self.context.write_data(&buf).map(|x| x as usize)
     }
 
     fn recv_u32_slice(&self, len: usize) -> Result<Vec<u32>, Self::Error> {
-        let mut buf = Vec::with_capacity(4 * len);
-        buf.resize(4 * len, 0);
+        let mut buf = vec![0; 4 * len];
         self.context.read_data(&mut buf)?;
-        let mut result = Vec::with_capacity(len);
-        result.resize(len, 0);
+        let mut result = vec![0; len];
         BigEndian::read_u32_into(&buf, &mut result);
         Ok(result)
     }
