@@ -1,6 +1,6 @@
 [package]
 name = "r64drive"
-version = "0.2.0"
+version = "0.2.2"
 authors = ["Andrew Wygle <awygle@gmail.com>"]
 edition = "2018"
 description = "A Rust API for the 64Drive N64 Development Cartridge's USB Interface"
