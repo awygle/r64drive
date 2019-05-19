@@ -88,6 +88,22 @@ pub trait R64Driver {
     type Error;
     fn send_u32(&self, val: u32) -> Result<usize, Self::Error>;
     fn recv_u32(&self) -> Result<u32, Self::Error>;
+
+    fn send_u32_slice(&self, slice: &[u32]) -> Result<usize, Self::Error> {
+        let mut result = 0;
+        for &val in slice {
+            result += self.send_u32(val)?;
+        }
+        Ok(result)
+    }
+
+    fn recv_u32_slice(&self, len: usize) -> Result<Vec<u32>, Self::Error> {
+        let mut result = Vec::with_capacity(len);
+        for _ in 0..len {
+            result.push(self.recv_u32()?);
+        }
+        Ok(result)
+    }
 }
 
 pub struct R64Drive<'a, T: R64Driver> {
