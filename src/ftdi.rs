@@ -39,7 +39,8 @@ impl R64DriveFtdi {
             .context
             .set_bitmode(0xFF, MpsseMode::BITMODE_SYNCFF)
             .unwrap();
-        result.recv_u32().unwrap();
+
+        result.context.purge_usb_buffers().unwrap();
 
         result
     }
