@@ -123,7 +123,6 @@ where
         cmd_id: Command,
         args: &[u32],
         expected_len: usize,
-        verify: bool,
     ) -> Result<Vec<u32>, R64DriveError<T::Error>> {
         let cmd_hdr = ((cmd_id as u32) << 24) | consts::COMMAND;
         self.driver.send_u32(cmd_hdr)?;
@@ -132,11 +131,14 @@ where
 
         let response = self.driver.recv_u32_slice(expected_len)?;
 
-        if verify {
-            let completion_pkt = (cmd_id as u32) | consts::COMPARE;
-            let resp_u32 = self.driver.recv_u32()?;
-            if resp_u32 != completion_pkt {
-                return Err(InvalidCompletion(resp_u32));
+        match cmd_id {
+            Command::LoadFromPC | Command::DumpToPC => {}
+            _ => {
+                let completion_pkt = (cmd_id as u32) | consts::COMPARE;
+                let resp_u32 = self.driver.recv_u32()?;
+                if resp_u32 != completion_pkt {
+                    return Err(InvalidCompletion(resp_u32));
+                }
             }
         }
 
@@ -146,7 +148,7 @@ where
     pub fn get_version(
         &self,
     ) -> Result<(HardwareVariant, FirmwareVersion), R64DriveError<T::Error>> {
-        let response = self.send_cmd(Command::VersionRequest, &[], 2, true)?;
+        let response = self.send_cmd(Command::VersionRequest, &[], 2)?;
         if response[1] != consts::MAGIC {
             Err(InvalidMagic(response[1]))?;
         }
@@ -157,7 +159,7 @@ where
     }
 
     pub fn set_save_type(&self, save_type: SaveType) -> Result<(), R64DriveError<T::Error>> {
-        self.send_cmd(Command::SetSaveType, &[save_type as u32], 0, true)
+        self.send_cmd(Command::SetSaveType, &[save_type as u32], 0)
             .map(|_| ())
     }
 
@@ -166,13 +168,12 @@ where
             Command::SetCICType,
             &[cic_type as u32 | consts::OVERRIDE_CIC],
             0,
-            true,
         )
         .map(|_| ())
     }
 
     pub fn set_ci_extended(&self, enable: bool) -> Result<(), R64DriveError<T::Error>> {
-        self.send_cmd(Command::SetCIExtended, &[enable as u32], 0, true)
+        self.send_cmd(Command::SetCIExtended, &[enable as u32], 0)
             .map(|_| ())
     }
 
@@ -189,8 +190,7 @@ where
         args.push(offset);
         args.push((bank as u32) << 24 | (data.len() * 4) as u32);
         args.extend(data);
-        self.send_cmd(Command::LoadFromPC, &args, 0, false)
-            .map(|_| ())
+        self.send_cmd(Command::LoadFromPC, &args, 0).map(|_| ())
     }
 
     pub fn dump_to_pc(
@@ -206,7 +206,6 @@ where
             Command::DumpToPC,
             &[offset, (bank as u32) << 24 | len],
             (len / 4) as usize,
-            false,
         )
     }
 }
