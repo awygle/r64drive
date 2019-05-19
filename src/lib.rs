@@ -159,7 +159,7 @@ where
     }
 
     pub fn set_cic_type(&self, cic_type: CICType) -> Result<(), R64DriveError<T::Error>> {
-        self.send_cmd(Command::SetCICType, &[cic_type as u32], 0)
+        self.send_cmd(Command::SetCICType, &[cic_type as u32 | consts::OVERRIDE_CIC], 0)
             .map(|_| ())
     }
 
