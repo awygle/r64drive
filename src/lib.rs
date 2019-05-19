@@ -177,6 +177,9 @@ where
         bank: BankIndex,
         data: &[u32],
     ) -> Result<(), R64DriveError<T::Error>> {
+        // TODO: Upload 8MB at a time instead of asserting on the length
+        assert!(data.len() <= consts::MAX_TRANSFER_SIZE);
+
         let mut args: Vec<u32> = Vec::with_capacity(data.len() + 2);
         args.push(offset);
         args.push((bank as u32) << 24 | (data.len() * 4) as u32);
@@ -190,6 +193,9 @@ where
         bank: BankIndex,
         len: u32,
     ) -> Result<Vec<u32>, R64DriveError<T::Error>> {
+        // TODO: Download 8MB at a time instead of asserting on the length
+        assert!((len as usize) <= consts::MAX_TRANSFER_SIZE);
+
         self.send_cmd(
             Command::DumpToPC,
             &[offset, (bank as u32) << 24 | len],
