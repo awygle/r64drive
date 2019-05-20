@@ -88,6 +88,22 @@ pub trait R64Driver {
     type Error;
     fn send_u32(&self, val: u32) -> Result<usize, Self::Error>;
     fn recv_u32(&self) -> Result<u32, Self::Error>;
+
+    fn send_u32_slice(&self, slice: &[u32]) -> Result<usize, Self::Error> {
+        let mut result = 0;
+        for &val in slice {
+            result += self.send_u32(val)?;
+        }
+        Ok(result)
+    }
+
+    fn recv_u32_slice(&self, len: usize) -> Result<Vec<u32>, Self::Error> {
+        let mut result = Vec::with_capacity(len);
+        for _ in 0..len {
+            result.push(self.recv_u32()?);
+        }
+        Ok(result)
+    }
 }
 
 pub struct R64Drive<'a, T: R64Driver> {
@@ -111,22 +127,19 @@ where
         let cmd_hdr = ((cmd_id as u32) << 24) | consts::COMMAND;
         self.driver.send_u32(cmd_hdr)?;
 
-        for arg in args {
-            self.driver.send_u32(*arg)?;
-        }
+        self.driver.send_u32_slice(args)?;
 
-        let mut response = Vec::new();
-        let completion_pkt = (cmd_id as u32) | consts::COMPARE;
+        let response = self.driver.recv_u32_slice(expected_len)?;
 
-        for _ in 0..expected_len {
-            let resp_u32 = self.driver.recv_u32()?;
-
-            response.push(resp_u32);
-        }
-
-        let resp_u32 = self.driver.recv_u32()?;
-        if resp_u32 != completion_pkt {
-            return Err(InvalidCompletion(resp_u32));
+        match cmd_id {
+            Command::LoadFromPC | Command::DumpToPC => {}
+            _ => {
+                let completion_pkt = (cmd_id as u32) | consts::COMPARE;
+                let resp_u32 = self.driver.recv_u32()?;
+                if resp_u32 != completion_pkt {
+                    return Err(InvalidCompletion(resp_u32));
+                }
+            }
         }
 
         Ok(response)
@@ -151,8 +164,12 @@ where
     }
 
     pub fn set_cic_type(&self, cic_type: CICType) -> Result<(), R64DriveError<T::Error>> {
-        self.send_cmd(Command::SetCICType, &[cic_type as u32], 0)
-            .map(|_| ())
+        self.send_cmd(
+            Command::SetCICType,
+            &[cic_type as u32 | consts::OVERRIDE_CIC],
+            0,
+        )
+        .map(|_| ())
     }
 
     pub fn set_ci_extended(&self, enable: bool) -> Result<(), R64DriveError<T::Error>> {
@@ -166,6 +183,9 @@ where
         bank: BankIndex,
         data: &[u32],
     ) -> Result<(), R64DriveError<T::Error>> {
+        // TODO: Upload 8MB at a time instead of asserting on the length
+        assert!(data.len() <= consts::MAX_TRANSFER_SIZE);
+
         let mut args: Vec<u32> = Vec::with_capacity(data.len() + 2);
         args.push(offset);
         args.push((bank as u32) << 24 | (data.len() * 4) as u32);
@@ -179,6 +199,9 @@ where
         bank: BankIndex,
         len: u32,
     ) -> Result<Vec<u32>, R64DriveError<T::Error>> {
+        // TODO: Download 8MB at a time instead of asserting on the length
+        assert!((len as usize) <= consts::MAX_TRANSFER_SIZE);
+
         self.send_cmd(
             Command::DumpToPC,
             &[offset, (bank as u32) << 24 | len],
